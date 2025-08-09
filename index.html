@@ -4,17 +4,15 @@
     <meta charset="UTF-8">
     <title>Telegram WebApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Можеш додати свої стилі тут -->
     <style>
         body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
-        .container { max-width: 480px; margin: auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 0 24px #0001; }
+        .container { max-width: 480px; margin: auto; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 0 24px #0001; margin-top: 24px; }
         .btn { display: block; width: 100%; margin: 10px 0; padding: 12px; font-size: 1.1em; border: none; border-radius: 8px; background: #007aff; color: #fff; cursor: pointer; }
         .btn.admin { background: #ff9800; }
         .section { margin: 18px 0; }
         .section-title { font-size: 1.2em; margin-bottom: 4px; font-weight: bold; }
         .balance { display: flex; gap: 12px; margin: 8px 0 18px; }
         .history, .purchases { margin-top: 4px; }
-        .shop-select, .withdraw-form, .statistic-form { margin: 10px 0; }
         .input { width: 100%; padding: 8px; margin: 6px 0; border-radius: 5px; border: 1px solid #ccc; }
         .modal { display: none; position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; background: #0008; z-index: 10; align-items: center; justify-content: center; }
         .modal-content { background: #fff; padding: 24px; border-radius: 10px; max-width: 340px; width: 90vw; }
@@ -23,18 +21,23 @@
         .stat-table th, .stat-table td { border: 1px solid #ccc; padding: 4px 8px; }
         .messages { background: #faf8e9; border-radius: 6px; padding: 8px; margin: 8px 0; }
         .hidden { display: none; }
+        .menu-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;}
+        .menu-btns .btn { flex: 1 1 48%; min-width: 130px;}
+        .back-btn {background: #999; margin-top: 14px;}
     </style>
 </head>
 <body>
 <div class="container">
 
-    <!-- Головна сторінка -->
+    <!-- Головне меню -->
     <div id="main-menu">
-        <button class="btn" id="user-btn">Особисті дані</button>
-        <button class="btn admin hidden" id="admin-btn">Адмін панель</button>
+        <div class="menu-btns">
+            <button class="btn" id="user-btn">Особисті дані</button>
+            <button class="btn admin hidden" id="admin-btn">Адмін панель</button>
+        </div>
     </div>
 
-    <!-- Блок особистих даних -->
+    <!-- Особисті дані -->
     <div id="user-data" class="hidden">
         <div class="section">
             <div class="section-title">👤 Особисті дані</div>
@@ -45,7 +48,22 @@
             <div>Баланс: <span id="balance-main">0</span></div>
             <div>Бонусний: <span id="balance-bonus">0</span></div>
         </div>
-        <div class="section shop-select">
+
+        <div class="menu-btns">
+            <button class="btn" id="menu-shop">Магазин</button>
+            <button class="btn" id="menu-withdraw">Зняття</button>
+            <button class="btn" id="menu-stat">Статистика</button>
+            <button class="btn" id="menu-auction">Аукціон</button>
+            <button class="btn" id="menu-history">Історія виводів</button>
+            <button class="btn" id="menu-purchases">Покупки</button>
+            <button class="btn" id="menu-messages">Повідомлення</button>
+        </div>
+        <button class="btn back-btn" id="back-to-main">⬅ Назад</button>
+    </div>
+
+    <!-- Магазин -->
+    <div id="shop-section" class="hidden">
+        <div class="section">
             <div class="section-title">🛒 Магазин</div>
             <select id="shop-items" class="input">
                 <option value="">Вибери товар</option>
@@ -63,7 +81,12 @@
             <input type="text" id="shop-book" class="input" placeholder="Вкажи книгу для покупки">
             <button class="btn" id="shop-buy">Купити</button>
         </div>
-        <div class="section withdraw-form">
+        <button class="btn back-btn" id="back-user">⬅ Назад</button>
+    </div>
+
+    <!-- Зняття -->
+    <div id="withdraw-section" class="hidden">
+        <div class="section">
             <div class="section-title">💸 Зняття монет</div>
             <input type="number" id="withdraw-amount" class="input" min="3000" max="15000" placeholder="Сума від 3000 до 15000">
             <select id="withdraw-speed" class="input">
@@ -73,29 +96,16 @@
             </select>
             <button class="btn" id="withdraw-btn">Вивести</button>
         </div>
-        <div class="section history">
-            <div class="section-title">Історія виводів (7)</div>
-            <ul id="withdraw-history"></ul>
-        </div>
-        <div class="section purchases">
-            <div class="section-title">Покупки (7)</div>
-            <ul id="purchase-history"></ul>
-        </div>
-        <div class="section auction">
-            <div class="section-title">Аукціон</div>
-            <!-- Тут буде твій код -->
-            <div id="auction-block"></div>
-        </div>
-        <div class="section messages">
-            <div class="section-title">Нові повідомлення</div>
-            <ul id="user-messages"></ul>
-        </div>
-        <div class="section statistic-form">
+        <button class="btn back-btn" id="back-user2">⬅ Назад</button>
+    </div>
+
+    <!-- Статистика -->
+    <div id="stat-section" class="hidden">
+        <div class="section">
             <div class="section-title">📊 Статистика</div>
             <input type="text" id="stat-book" class="input" placeholder="Додати книгу">
             <button class="btn" id="add-stat-book">Додати книгу</button>
             <div id="stat-books-list"></div>
-            <!-- Google table style -->
             <table class="stat-table hidden" id="stat-table">
                 <thead>
                     <tr>
@@ -107,13 +117,48 @@
                 <tbody id="stat-table-body"></tbody>
             </table>
         </div>
-        <button class="btn" id="back-to-main">⬅ Назад</button>
+        <button class="btn back-btn" id="back-user3">⬅ Назад</button>
+    </div>
+
+    <!-- Аукціон -->
+    <div id="auction-section" class="hidden">
+        <div class="section">
+            <div class="section-title">Аукціон</div>
+            <div id="auction-block"></div>
+        </div>
+        <button class="btn back-btn" id="back-user4">⬅ Назад</button>
+    </div>
+
+    <!-- Історія виводів -->
+    <div id="history-section" class="hidden">
+        <div class="section history">
+            <div class="section-title">Історія виводів (7)</div>
+            <ul id="withdraw-history"></ul>
+        </div>
+        <button class="btn back-btn" id="back-user5">⬅ Назад</button>
+    </div>
+
+    <!-- Покупки -->
+    <div id="purchases-section" class="hidden">
+        <div class="section purchases">
+            <div class="section-title">Покупки (7)</div>
+            <ul id="purchase-history"></ul>
+        </div>
+        <button class="btn back-btn" id="back-user6">⬅ Назад</button>
+    </div>
+
+    <!-- Повідомлення -->
+    <div id="messages-section" class="hidden">
+        <div class="section messages">
+            <div class="section-title">Нові повідомлення</div>
+            <ul id="user-messages"></ul>
+        </div>
+        <button class="btn back-btn" id="back-user7">⬅ Назад</button>
     </div>
 
     <!-- Адмін панель -->
     <div id="admin-panel" class="hidden">
-        <div class="section">
-            <div class="section-title">👑 Адмін панель</div>
+        <div class="menu-btns">
             <button class="btn admin" id="show-users">Всі учасники</button>
             <button class="btn admin" id="show-requests">Реєстрація (заявки)</button>
             <button class="btn admin" id="manage-users">Управління учасниками</button>
@@ -121,7 +166,7 @@
             <button class="btn admin" id="admin-withdraw">Зняття (заявки)</button>
             <button class="btn admin" id="admin-messages">Нові повідомлення</button>
         </div>
-        <button class="btn" id="back-to-main-admin">⬅ Назад</button>
+        <button class="btn back-btn" id="back-to-main-admin">⬅ Назад</button>
     </div>
 
     <!-- Модалка реєстрації -->
@@ -135,9 +180,13 @@
     </div>
 </div>
 <script>
-    // Далі JS для перемикання сторінок, показу/приховування адмін-кнопки і модалки
-    // Це тестова логіка, далі буде інтеграція з Python API
-    const isAdmin = false; // тут буде перевірка через бекенд
+    // Перемикання сторінок/секцій:
+    function hideAllSections() {
+        ["shop-section","withdraw-section","stat-section","auction-section",
+         "history-section","purchases-section","messages-section"]
+        .forEach(id=>document.getElementById(id).classList.add("hidden"));
+    }
+    // Головне меню
     document.getElementById("user-btn").onclick = () => {
         document.getElementById("main-menu").classList.add("hidden");
         document.getElementById("user-data").classList.remove("hidden");
@@ -149,14 +198,62 @@
     document.getElementById("back-to-main").onclick = () => {
         document.getElementById("user-data").classList.add("hidden");
         document.getElementById("main-menu").classList.remove("hidden");
+        hideAllSections();
     };
     document.getElementById("back-to-main-admin").onclick = () => {
         document.getElementById("admin-panel").classList.add("hidden");
         document.getElementById("main-menu").classList.remove("hidden");
     };
+
+    // Особисті дані — меню кнопки
+    document.getElementById("menu-shop").onclick = () => {
+        document.getElementById("user-data").classList.add("hidden");
+        hideAllSections();
+        document.getElementById("shop-section").classList.remove("hidden");
+    };
+    document.getElementById("menu-withdraw").onclick = () => {
+        document.getElementById("user-data").classList.add("hidden");
+        hideAllSections();
+        document.getElementById("withdraw-section").classList.remove("hidden");
+    };
+    document.getElementById("menu-stat").onclick = () => {
+        document.getElementById("user-data").classList.add("hidden");
+        hideAllSections();
+        document.getElementById("stat-section").classList.remove("hidden");
+    };
+    document.getElementById("menu-auction").onclick = () => {
+        document.getElementById("user-data").classList.add("hidden");
+        hideAllSections();
+        document.getElementById("auction-section").classList.remove("hidden");
+    };
+    document.getElementById("menu-history").onclick = () => {
+        document.getElementById("user-data").classList.add("hidden");
+        hideAllSections();
+        document.getElementById("history-section").classList.remove("hidden");
+    };
+    document.getElementById("menu-purchases").onclick = () => {
+        document.getElementById("user-data").classList.add("hidden");
+        hideAllSections();
+        document.getElementById("purchases-section").classList.remove("hidden");
+    };
+    document.getElementById("menu-messages").onclick = () => {
+        document.getElementById("user-data").classList.add("hidden");
+        hideAllSections();
+        document.getElementById("messages-section").classList.remove("hidden");
+    };
+
+    // Кнопки "Назад" з розділів
+    ["back-user","back-user2","back-user3","back-user4","back-user5","back-user6","back-user7"].forEach(id=>{
+        document.getElementById(id).onclick = () => {
+            hideAllSections();
+            document.getElementById("user-data").classList.remove("hidden");
+        };
+    });
+
+    // Модалка реєстрації
     window.onload = () => {
-        // Покажемо модалку реєстрації якщо потрібно (логіка через бекенд)
         const needRegistration = true; // заміниш на перевірку через бекенд
+        const isAdmin = false; // тут буде перевірка через бекенд
         if (needRegistration) {
             document.getElementById("registration-modal").classList.add("active");
         }
