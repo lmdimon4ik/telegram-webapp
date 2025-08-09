@@ -24,6 +24,10 @@
         .menu-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;}
         .menu-btns .btn { flex: 1 1 48%; min-width: 130px;}
         .back-btn {background: #999; margin-top: 14px;}
+        /* --- admin user list --- */
+        .admin-user-list, .admin-requests-list, .admin-manage-list {margin-top:10px;}
+        .admin-user-block, .admin-request-block, .admin-manage-block {background:#f6f6f6; border-radius:8px; padding:8px 12px; margin-bottom:8px;}
+        .admin-user-block .btn, .admin-request-block .btn, .admin-manage-block .btn {margin:4px 0;}
     </style>
 </head>
 <body>
@@ -166,6 +170,16 @@
             <button class="btn admin" id="admin-withdraw">Зняття (заявки)</button>
             <button class="btn admin" id="admin-messages">Нові повідомлення</button>
         </div>
+        <!-- --- Адмін: всі учасники --- -->
+        <div class="admin-user-list hidden" id="admin-users-list"></div>
+        <!-- --- Адмін: заявки на реєстрацію --- -->
+        <div class="admin-requests-list hidden" id="admin-requests-list"></div>
+        <!-- --- Адмін: управління учасниками --- -->
+        <div class="admin-manage-list hidden" id="admin-manage-list"></div>
+        <!-- --- Адмін: магазин, зняття, нові повідомлення --- -->
+        <div class="admin-shop-list hidden" id="admin-shop-list"></div>
+        <div class="admin-withdraw-list hidden" id="admin-withdraw-list"></div>
+        <div class="admin-messages-list hidden" id="admin-messages-list"></div>
         <button class="btn back-btn" id="back-to-main-admin">⬅ Назад</button>
     </div>
 
@@ -180,12 +194,112 @@
     </div>
 </div>
 <script>
-    // Перемикання сторінок/секцій:
+    // --- Демонстраційні дані (мок для адмінки). Замінити на API!
+    const demoUsers = [
+        {id:1, name:"Іван", admin:"Олег", balance:5000, bonus:200, books:["Книга 1","Книга 2"]},
+        {id:2, name:"Марія", admin:"Олег", balance:3500, bonus:100, books:["Книга 3"]},
+        {id:3, name:"Артем", admin:"Діма", balance:9000, bonus:500, books:["Книга 4","Книга 5"]},
+    ];
+    const demoRequests = [
+        {id:101, name:"Петро", telegram:"@petro"},
+        {id:102, name:"Оля", telegram:"@olya"},
+    ];
+    // --- Всі учасники ---
+    function renderAdminUsers() {
+        let el = document.getElementById("admin-users-list");
+        el.innerHTML = '<h3>Всі учасники</h3>' +
+            demoUsers.map(u=>`
+                <div class="admin-user-block">
+                    <b>${u.name}</b> | Адмін: ${u.admin} | Баланс: ${u.balance} | Бонус: ${u.bonus}
+                    <div>Книги: ${u.books.join(", ")}</div>
+                </div>
+            `).join('');
+        hideAdminLists();
+        el.classList.remove("hidden");
+    }
+    // --- Заявки на реєстрацію ---
+    function renderAdminRequests() {
+        let el = document.getElementById("admin-requests-list");
+        el.innerHTML = '<h3>Заявки на реєстрацію</h3>' +
+            demoRequests.map(r=>`
+                <div class="admin-request-block">
+                    <b>${r.name}</b> | ${r.telegram}
+                    <button class="btn admin" onclick="approveRequest(${r.id})">Підтвердити</button>
+                    <button class="btn admin" onclick="declineRequest(${r.id})">Відхилити</button>
+                </div>
+            `).join('');
+        hideAdminLists();
+        el.classList.remove("hidden");
+    }
+    function approveRequest(id){alert("Підтверджено: "+id);}
+    function declineRequest(id){alert("Відхилено: "+id);}
+    // --- Управління учасниками ---
+    function renderAdminManage() {
+        let el = document.getElementById("admin-manage-list");
+        el.innerHTML = '<h3>Управління учасниками</h3>' +
+            demoUsers.map(u=>`
+                <div class="admin-manage-block">
+                    <b>${u.name}</b> | Адмін: ${u.admin}
+                    <button class="btn admin" onclick="showUserManage(${u.id})">Керувати</button>
+                </div>
+            `).join('');
+        hideAdminLists();
+        el.classList.remove("hidden");
+    }
+    function showUserManage(id){
+        let user = demoUsers.find(u=>u.id===id);
+        if(!user) return;
+        document.getElementById("admin-manage-list").innerHTML = `
+            <h3>Керування учасником: ${user.name}</h3>
+            <div>Баланс: <input type="number" value="${user.balance}" id="edit-balance"></div>
+            <div>Бонус: <input type="number" value="${user.bonus}" id="edit-bonus"></div>
+            <div>Книги: <input type="text" value="${user.books.join(", ")}" id="edit-books"></div>
+            <button class="btn admin" onclick="saveUserManage(${user.id})">Зберегти зміни</button>
+            <button class="btn back-btn" onclick="renderAdminManage()">⬅ Назад</button>
+        `;
+    }
+    function saveUserManage(id){
+        let user = demoUsers.find(u=>u.id===id);
+        if(!user) return;
+        user.balance = parseInt(document.getElementById("edit-balance").value);
+        user.bonus = parseInt(document.getElementById("edit-bonus").value);
+        user.books = document.getElementById("edit-books").value.split(",").map(b=>b.trim());
+        alert("Зміни збережено для "+user.name);
+        renderAdminManage();
+    }
+    // --- Магазин (заявки) ---
+    function renderAdminShop() {
+        let el = document.getElementById("admin-shop-list");
+        el.innerHTML = '<h3>Магазин (заявки)</h3><div>Тут будуть заявки на покупки (реалізується через бекенд)</div>';
+        hideAdminLists();
+        el.classList.remove("hidden");
+    }
+    // --- Зняття (заявки) ---
+    function renderAdminWithdraw() {
+        let el = document.getElementById("admin-withdraw-list");
+        el.innerHTML = '<h3>Зняття (заявки)</h3><div>Тут будуть заявки на зняття (реалізується через бекенд)</div>';
+        hideAdminLists();
+        el.classList.remove("hidden");
+    }
+    // --- Нові повідомлення ---
+    function renderAdminMessages() {
+        let el = document.getElementById("admin-messages-list");
+        el.innerHTML = '<h3>Нові повідомлення</h3><div>Тут будуть нові повідомлення (реалізується через бекенд)</div>';
+        hideAdminLists();
+        el.classList.remove("hidden");
+    }
+    function hideAdminLists(){
+        ["admin-users-list","admin-requests-list","admin-manage-list","admin-shop-list","admin-withdraw-list","admin-messages-list"]
+        .forEach(id=>document.getElementById(id).classList.add("hidden"));
+    }
+
+    // --- Перемикання сторінок/секцій:
     function hideAllSections() {
         ["shop-section","withdraw-section","stat-section","auction-section",
          "history-section","purchases-section","messages-section"]
         .forEach(id=>document.getElementById(id).classList.add("hidden"));
     }
+
     // Головне меню
     document.getElementById("user-btn").onclick = () => {
         document.getElementById("main-menu").classList.add("hidden");
@@ -194,6 +308,7 @@
     document.getElementById("admin-btn").onclick = () => {
         document.getElementById("main-menu").classList.add("hidden");
         document.getElementById("admin-panel").classList.remove("hidden");
+        hideAdminLists();
     };
     document.getElementById("back-to-main").onclick = () => {
         document.getElementById("user-data").classList.add("hidden");
@@ -203,6 +318,7 @@
     document.getElementById("back-to-main-admin").onclick = () => {
         document.getElementById("admin-panel").classList.add("hidden");
         document.getElementById("main-menu").classList.remove("hidden");
+        hideAdminLists();
     };
 
     // Особисті дані — меню кнопки
@@ -250,10 +366,18 @@
         };
     });
 
+    // --- Адмін-панель кнопки ---
+    document.getElementById("show-users").onclick = renderAdminUsers;
+    document.getElementById("show-requests").onclick = renderAdminRequests;
+    document.getElementById("manage-users").onclick = renderAdminManage;
+    document.getElementById("admin-shop").onclick = renderAdminShop;
+    document.getElementById("admin-withdraw").onclick = renderAdminWithdraw;
+    document.getElementById("admin-messages").onclick = renderAdminMessages;
+
     // Модалка реєстрації
     window.onload = () => {
-        const needRegistration = true; // заміниш на перевірку через бекенд
-        const isAdmin = false; // тут буде перевірка через бекенд
+        const needRegistration = false; // заміниш на перевірку через бекенд
+        const isAdmin = true; // тут буде перевірка через бекенд
         if (needRegistration) {
             document.getElementById("registration-modal").classList.add("active");
         }
@@ -261,6 +385,11 @@
         if (isAdmin) {
             document.getElementById("admin-btn").classList.remove("hidden");
         }
+        // Заповнити демо-дані юзера
+        document.getElementById("user-nickname").textContent = "Іван";
+        document.getElementById("main-admin").textContent = "Олег";
+        document.getElementById("balance-main").textContent = "5000";
+        document.getElementById("balance-bonus").textContent = "200";
     };
     document.getElementById("reg-submit").onclick = () => {
         // Тут буде запит реєстрації до бекенду (Python)
