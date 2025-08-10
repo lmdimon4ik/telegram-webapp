@@ -375,26 +375,34 @@
     document.getElementById("admin-messages").onclick = renderAdminMessages;
 
     // Модалка реєстрації
-    window.onload = () => {
-        const needRegistration = false; // заміниш на перевірку через бекенд
-        const isAdmin = true; // тут буде перевірка через бекенд
-        if (needRegistration) {
-            document.getElementById("registration-modal").classList.add("active");
-        }
-        // Показати адмін-кнопку якщо адмін
-        if (isAdmin) {
-            document.getElementById("admin-btn").classList.remove("hidden");
-        }
-        // Заповнити демо-дані юзера
-        document.getElementById("user-nickname").textContent = "Іван";
-        document.getElementById("main-admin").textContent = "Олег";
-        document.getElementById("balance-main").textContent = "5000";
-        document.getElementById("balance-bonus").textContent = "200";
-    };
     document.getElementById("reg-submit").onclick = () => {
         // Тут буде запит реєстрації до бекенду (Python)
         document.getElementById("registration-modal").classList.remove("active");
         alert("Реєстрація відправлена, чекайте підтвердження адміна!");
+    };
+
+    // --- Перевірка на адміна (приховати адмінку для простого юзера) ---
+    window.onload = async () => {
+        // Отримай Telegram user id
+        let tg = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) || {};
+        let tg_id = tg.id || 0;
+
+        // Запит до бекенду (твій сервер має бути доступний!)
+        let userInfo = await fetch("/api/user-info?tg_id=" + tg_id)
+            .then(r => r.json()).catch(()=>({isAdmin:false}));
+
+        // Покажи кнопку тільки якщо адмін
+        if (userInfo.isAdmin) {
+            document.getElementById("admin-btn").classList.remove("hidden");
+        } else {
+            document.getElementById("admin-btn").classList.add("hidden");
+        }
+
+        // Заповнити демо-дані юзера (залишай як було)
+        document.getElementById("user-nickname").textContent = tg.first_name || "Гість";
+        document.getElementById("main-admin").textContent = "Олег"; // тут можна зробити запит на головного адміна
+        document.getElementById("balance-main").textContent = "5000"; // заміни на реальні дані
+        document.getElementById("balance-bonus").textContent = "200";
     };
 </script>
 </body>
