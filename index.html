@@ -28,6 +28,8 @@
         .admin-user-list, .admin-requests-list, .admin-manage-list {margin-top:10px;}
         .admin-user-block, .admin-request-block, .admin-manage-block {background:#f6f6f6; border-radius:8px; padding:8px 12px; margin-bottom:8px;}
         .admin-user-block .btn, .admin-request-block .btn, .admin-manage-block .btn {margin:4px 0;}
+        .reg-success-message {background: #e8ffe8; color: #277a27; border-radius: 6px; padding: 12px; margin-top: 10px;}
+        .reg-error-message {background: #ffe8e8; color: #d32f2f; border-radius: 6px; padding: 12px; margin-top: 10px;}
     </style>
 </head>
 <body>
@@ -38,6 +40,9 @@
         <div class="menu-btns">
             <button class="btn" id="user-btn">Особисті дані</button>
             <button class="btn admin hidden" id="admin-btn">Адмін панель</button>
+        </div>
+        <div id="registration-block" class="section">
+            <!-- Реєстрація тут -->
         </div>
     </div>
 
@@ -182,18 +187,48 @@
         <div class="admin-messages-list hidden" id="admin-messages-list"></div>
         <button class="btn back-btn" id="back-to-main-admin">⬅ Назад</button>
     </div>
-
-    <!-- Модалка реєстрації -->
-    <div class="modal" id="registration-modal">
-        <div class="modal-content">
-            <h3>Реєстрація</h3>
-            <input type="text" id="reg-nickname" class="input" placeholder="Введи свою кличку">
-            <input type="text" id="reg-telegram" class="input" placeholder="Введи свій Telegram (@username)">
-            <button class="btn" id="reg-submit">Зареєструватися</button>
-        </div>
-    </div>
 </div>
 <script>
+    // --- Реєстрація через WebApp ---
+    function renderRegistrationForm(userInfo, tg) {
+        // Якщо вже зареєстрований — не показувати форму
+        if (userInfo.registered) {
+            document.getElementById("registration-block").innerHTML = '<div class="reg-success-message">Ви вже зареєстровані! Очікуйте підтвердження від адміністратора.</div>';
+            return;
+        }
+        document.getElementById("registration-block").innerHTML = `
+            <h3>Реєстрація</h3>
+            <form id="regForm">
+                <input type="text" name="nickname" class="input" placeholder="Введи свою кличку" required>
+                <input type="text" name="telegram_login" class="input" placeholder="Введи свій Telegram (@username)" required>
+                <button class="btn" type="submit">Зареєструватися</button>
+            </form>
+            <div id="reg-result"></div>
+        `;
+        document.getElementById("regForm").onsubmit = async (e) => {
+            e.preventDefault();
+            let tg_id = tg.id ? tg.id : "";
+            let nickname = e.target.nickname.value.trim();
+            let telegram_login = e.target.telegram_login.value.trim();
+            let res = await fetch("/api/register", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    tg_id: tg_id,
+                    nickname: nickname,
+                    telegram_login: telegram_login
+                })
+            });
+            let json = await res.json();
+            if(json.success){
+                document.getElementById("reg-result").innerHTML = `<div class="reg-success-message">${json.message}</div>`;
+                document.getElementById("regForm").remove();
+            } else {
+                document.getElementById("reg-result").innerHTML = `<div class="reg-error-message">${json.error}</div>`;
+            }
+        };
+    }
+
     // --- Демонстраційні дані (мок для адмінки). Замінити на API!
     const demoUsers = [
         {id:1, name:"Іван", admin:"Олег", balance:5000, bonus:200, books:["Книга 1","Книга 2"]},
@@ -374,22 +409,15 @@
     document.getElementById("admin-withdraw").onclick = renderAdminWithdraw;
     document.getElementById("admin-messages").onclick = renderAdminMessages;
 
-    // Модалка реєстрації
-    document.getElementById("reg-submit").onclick = () => {
-        // Тут буде запит реєстрації до бекенду (Python)
-        document.getElementById("registration-modal").classList.remove("active");
-        alert("Реєстрація відправлена, чекайте підтвердження адміна!");
-    };
-
-    // --- Перевірка на адміна (приховати адмінку для простого юзера) ---
+    // --- Перевірка на адміна (приховати адмінку для простого юзера) + реєстрація
     window.onload = async () => {
-        // Отримай Telegram user id
+        // Отримати Telegram user id та дані
         let tg = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) || {};
         let tg_id = tg.id || 0;
 
         // Запит до бекенду (твій сервер має бути доступний!)
         let userInfo = await fetch("/api/user-info?tg_id=" + tg_id)
-            .then(r => r.json()).catch(()=>({isAdmin:false}));
+            .then(r => r.json()).catch(()=>({isAdmin:false, registered:false}));
 
         // Покажи кнопку тільки якщо адмін
         if (userInfo.isAdmin) {
@@ -399,10 +427,13 @@
         }
 
         // Заповнити демо-дані юзера (залишай як було)
-        document.getElementById("user-nickname").textContent = tg.first_name || "Гість";
-        document.getElementById("main-admin").textContent = "Олег"; // тут можна зробити запит на головного адміна
-        document.getElementById("balance-main").textContent = "5000"; // заміни на реальні дані
-        document.getElementById("balance-bonus").textContent = "200";
+        document.getElementById("user-nickname").textContent = userInfo.nickname || tg.first_name || "Гість";
+        document.getElementById("main-admin").textContent = userInfo.admin || "Олег";
+        document.getElementById("balance-main").textContent = userInfo.balance || "0";
+        document.getElementById("balance-bonus").textContent = userInfo.bonus || "0";
+
+        // --- Реєстрація через WebApp ---
+        renderRegistrationForm(userInfo, tg);
     };
 </script>
 </body>
